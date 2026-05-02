@@ -1,0 +1,203 @@
+[package]
+name = "oxirouter"
+version = "0.1.0"
+edition = "2024"
+authors = ["COOLJAPAN OU (Team Kitasan)"]
+description = "Autonomous Semantic Federation Engine for the Edge - Learned source selection for SPARQL federated queries with context-awareness"
+license = "Apache-2.0"
+repository = "https://github.com/cool-japan/oxirouter"
+readme = "README.md"
+documentation = "https://docs.rs/oxirouter"
+keywords = ["sparql", "federation", "semantic-web", "edge-computing", "ml"]
+categories = ["science", "wasm", "no-std"]
+rust-version = "1.85"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["std", "alloc"]
+std = ["serde/std", "thiserror"]
+alloc = []
+no_std = []
+
+# HTTP client for real federation execution
+http = ["ureq"]
+
+# WASM support
+wasm = ["wasm-bindgen", "js-sys", "console_error_panic_hook"]
+
+# Edge device support
+edge = []
+
+# ML inference engine
+ml = ["dep:libm"]
+
+# Dropout regularization for neural network
+dropout = ["ml"]
+
+# Reinforcement learning
+rl = ["dep:rand", "dep:libm"]
+
+# Caching layer
+cache = []
+
+# P2P / IPFS source kind — type-level integration, scoring adjustments in heuristic router
+# No networking dependencies: purely type-level with compile-time gated scoring logic
+p2p = []
+
+# Agent action primitive interface — exposes routing as self-describing actions
+# for LLM agent runtimes (oxi-agent, OpenAI tool-call protocol, etc.)
+agent = []
+
+# Ecosystem integrations (4 brains)
+geo = ["oxigdal-core", "oxigdal-proj"]      # Physical brain
+device = ["mielin-hal"]                       # Body brain
+load = ["celers-core"]                        # Situation brain
+legal = ["legalis-core"]                      # Social brain
+sparql = []                                    # SPARQL engine — pure-Rust prefix expansion and projection extraction (see src/core/sparql.rs)
+void = []                                      # VoID/Turtle source-capability descriptors — pure-Rust Turtle subset parser (see src/core/turtle.rs and src/core/void.rs)
+
+# Full ecosystem integration
+ecosystem = ["geo", "device", "load", "legal"]
+full = ["ml", "rl", "cache", "ecosystem"]
+
+# Structured tracing spans and metrics counters/histograms — zero-cost when disabled
+observability = ["dep:tracing", "dep:metrics", "std"]
+
+# CLI binary — activates all pure-Rust features needed by the CLI
+cli = ["std", "agent", "sparql", "void"]
+
+[dependencies]
+# Core dependencies
+serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
+thiserror = { version = "2.0", optional = true }
+hashbrown = { version = "0.17", default-features = false, features = ["serde", "default-hasher"] }
+smallvec = { version = "1.15", default-features = false, features = ["serde"] }
+serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
+
+# Math for ML (no_std compatible)
+libm = { version = "0.2", optional = true }
+
+# RNG for RL exploration (no_std compatible, pure Rust)
+rand = { version = "0.10", default-features = false, optional = true }
+
+# HTTP client for federation (sync, no async)
+ureq = { version = "3.3", optional = true }
+
+# Observability: structured tracing spans and metrics
+tracing = { version = "0.1", default-features = false, features = ["attributes", "std"], optional = true }
+metrics = { version = "0.24", optional = true }
+
+# Ecosystem integrations (from crates.io)
+oxigdal-core = { version = "0.1.4", optional = true }
+oxigdal-proj = { version = "0.1.4", optional = true }
+legalis-core = { version = "0.1.5", optional = true }
+celers-core = { version = "0.2.0", optional = true }
+mielin-hal = { version = "0.1.0-rc.1", optional = true }
+# oxirs-ttl/oxirs-core rejected (dep explosion + C deps + compile errors in 0.2.4)
+# SPARQL helpers are implemented inline (src/core/sparql.rs) with zero new deps
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2", optional = true }
+js-sys = { version = "0.3", optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
+
+[dev-dependencies]
+criterion = "0.8"
+proptest = "1"
+tokio = { version = "1.52", features = ["rt-multi-thread", "macros"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+metrics-util = { version = "0.20", features = ["debugging"] }
+
+[[example]]
+name = "sparql_routing"
+required-features = ["sparql"]
+
+[[example]]
+name = "void_descriptor"
+required-features = ["void"]
+
+[[example]]
+name = "agent_actions"
+required-features = ["agent", "sparql"]
+
+[[bin]]
+name = "oxirouter-cli"
+path = "src/bin/oxirouter-cli.rs"
+required-features = ["cli"]
+
+[[bench]]
+name = "inference_bench"
+harness = false
+
+[profile.release]
+lto = true
+opt-level = "s"
+codegen-units = 1
+
+[profile.release-wasm]
+inherits = "release"
+opt-level = "z"
+panic = "abort"
+
+[profile.release-edge]
+inherits = "release"
+lto = "fat"
+panic = "abort"
+opt-level = "z"
+codegen-units = 1
+strip = true
+incremental = false
+
+[lints.rust]
+unsafe_code = "warn"
+missing_docs = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -2 }
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+cast_precision_loss = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_lossless = "allow"
+unreadable_literal = "allow"
+mixed_attributes_style = "allow"
+similar_names = "allow"
+struct_excessive_bools = "allow"
+too_many_lines = "allow"
+cognitive_complexity = "allow"
+manual_assert = "allow"
+match_same_arms = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+needless_pass_by_value = "allow"
+wildcard_imports = "allow"
+doc_markdown = "allow"
+trivially_copy_pass_by_ref = "allow"
+same_item_push = "allow"
+needless_range_loop = "allow"
+unused_self = "allow"
+unnecessary_literal_bound = "allow"
+struct_field_names = "allow"
+redundant_else = "allow"
+single_match_else = "allow"
+if_not_else = "allow"
+items_after_statements = "allow"
+uninlined_format_args = "allow"
+return_self_not_must_use = "allow"
+match_like_matches_macro = "allow"
+map_unwrap_or = "allow"
+manual_let_else = "allow"
+useless_format = "allow"
+format_push_string = "allow"
+derivable_impls = "allow"
+needless_raw_string_hashes = "allow"
+semicolon_if_nothing_returned = "allow"
+iter_over_hash_type = "allow"
+explicit_iter_loop = "allow"
+float_cmp = "allow"
+field_reassign_with_default = "allow"
+useless_vec = "allow"

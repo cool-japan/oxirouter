@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OxiRouter WASM Demo</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --primary: #0f3460;
+            --accent: #e94560;
+            --text: #eaeaea;
+            --success: #4ade80;
+            --warning: #fbbf24;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: var(--accent);
+        }
+        .version {
+            text-align: center;
+            color: #888;
+            margin-bottom: 2rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        .panel {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .panel h2 {
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--primary);
+            padding-bottom: 0.5rem;
+        }
+        .full-width { grid-column: 1 / -1; }
+        textarea {
+            width: 100%;
+            height: 150px;
+            background: var(--bg);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            padding: 1rem;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.1s, opacity 0.2s;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        button:hover { opacity: 0.9; }
+        button:active { transform: scale(0.98); }
+        button.secondary {
+            background: var(--primary);
+        }
+        .source-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .source-item {
+            background: var(--bg);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .source-item .name {
+            font-weight: 600;
+            color: var(--accent);
+        }
+        .source-item .endpoint {
+            font-size: 0.8rem;
+            color: #888;
+        }
+        .source-item .status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+        .source-item .status.unavailable {
+            background: var(--warning);
+        }
+        .add-source {
+            display: grid;
+            grid-template-columns: 1fr 2fr auto;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .add-source input {
+            background: var(--bg);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 0.5rem;
+        }
+        .add-source input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .results {
+            background: var(--bg);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .ranking-item {
+            background: var(--bg);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ranking-item .rank {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent);
+            width: 30px;
+        }
+        .ranking-item .source-name {
+            flex: 1;
+            font-weight: 600;
+        }
+        .ranking-item .confidence {
+            background: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        .confidence-bar {
+            width: 100px;
+            height: 8px;
+            background: var(--bg);
+            border-radius: 4px;
+            margin-left: 1rem;
+            overflow: hidden;
+        }
+        .confidence-bar .fill {
+            height: 100%;
+            background: var(--success);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+        .stat-item {
+            background: var(--bg);
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-item .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+        }
+        .stat-item .label {
+            font-size: 0.75rem;
+            color: #888;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--surface);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .config-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .config-item label {
+            font-size: 0.85rem;
+            color: #888;
+        }
+        .config-item input[type="number"],
+        .config-item input[type="checkbox"] {
+            background: var(--bg);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 0.5rem;
+        }
+        .config-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+        }
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+        .analysis-item {
+            background: var(--bg);
+            padding: 0.5rem;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        .analysis-item.true { background: rgba(74, 222, 128, 0.2); }
+        .analysis-item.false { background: rgba(239, 68, 68, 0.2); }
+    </style>
+</head>
+<body>
+    <h1>OxiRouter WASM Demo</h1>
+    <p class="version" id="version">Loading WASM module...</p>
+
+    <div class="container">
+        <!-- Sources Panel -->
+        <div class="panel">
+            <h2>Data Sources</h2>
+            <div class="source-list" id="source-list">
+                <!-- Sources will be listed here -->
+            </div>
+            <div class="add-source">
+                <input type="text" id="source-id" placeholder="Source ID">
+                <input type="text" id="source-endpoint" placeholder="SPARQL Endpoint URL">
+                <button onclick="addSource()">Add</button>
+            </div>
+            <div style="margin-top: 1rem;">
+                <button class="secondary" onclick="addDemoSources()">Load Demo Sources</button>
+            </div>
+        </div>
+
+        <!-- Config Panel -->
+        <div class="panel">
+            <h2>Router Configuration</h2>
+            <div class="config-grid">
+                <div class="config-item">
+                    <label>Max Sources</label>
+                    <input type="number" id="max-sources" value="5" min="1" max="20" onchange="updateConfig()">
+                </div>
+                <div class="config-item">
+                    <label>Min Confidence</label>
+                    <input type="number" id="min-confidence" value="0.1" min="0" max="1" step="0.1" onchange="updateConfig()">
+                </div>
+                <div class="config-item">
+                    <label>Use ML</label>
+                    <input type="checkbox" id="use-ml" onchange="updateConfig()">
+                </div>
+                <div class="config-item">
+                    <label>Use Context</label>
+                    <input type="checkbox" id="use-context" onchange="updateConfig()">
+                </div>
+            </div>
+        </div>
+
+        <!-- Query Panel -->
+        <div class="panel full-width">
+            <h2>SPARQL Query</h2>
+            <textarea id="query-input">PREFIX dbo: &lt;http://dbpedia.org/ontology/&gt;
+PREFIX dbr: &lt;http://dbpedia.org/resource/&gt;
+
+SELECT ?name ?birthDate WHERE {
+    ?person a dbo:Person .
+    ?person dbo:name ?name .
+    OPTIONAL { ?person dbo:birthDate ?birthDate }
+}
+LIMIT 100</textarea>
+            <div style="margin-top: 1rem;">
+                <button onclick="routeQuery()">Route Query</button>
+                <button class="secondary" onclick="analyzeQuery()">Analyze Query</button>
+            </div>
+        </div>
+
+        <!-- Query Analysis Panel -->
+        <div class="panel">
+            <h2>Query Analysis</h2>
+            <div id="query-analysis">
+                <p style="color: #888;">Click "Analyze Query" to see query features</p>
+            </div>
+        </div>
+
+        <!-- Routing Results Panel -->
+        <div class="panel">
+            <h2>Routing Results</h2>
+            <div id="routing-results">
+                <p style="color: #888;">Click "Route Query" to see source ranking</p>
+            </div>
+        </div>
+
+        <!-- Stats Panel -->
+        <div class="panel full-width">
+            <h2>Source Statistics</h2>
+            <div class="stats-grid" id="stats-grid">
+                <p style="color: #888; grid-column: 1/-1;">Add sources and route queries to see statistics</p>
+            </div>
+        </div>
+
+        <!-- Console Panel -->
+        <div class="panel full-width">
+            <h2>Console Output</h2>
+            <div class="results" id="console"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { OxiRouter } from './pkg/oxirouter.js';
+
+        let router = null;
+
+        // Make functions available globally
+        window.addSource = addSource;
+        window.addDemoSources = addDemoSources;
+        window.routeQuery = routeQuery;
+        window.analyzeQuery = analyzeQuery;
+        window.updateConfig = updateConfig;
+        window.removeSource = removeSource;
+        window.toggleAvailability = toggleAvailability;
+
+        async function main() {
+            try {
+                await init();
+                router = new OxiRouter();
+
+                document.getElementById('version').textContent =
+                    `OxiRouter v${OxiRouter.version()} - WASM Module Loaded`;
+
+                log('OxiRouter WASM module initialized successfully!');
+                log(`Version: ${OxiRouter.version()}`);
+            } catch (e) {
+                log(`Error loading WASM: ${e}`, 'error');
+            }
+        }
+
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '[ERROR]' : '[INFO]';
+            console.textContent += `${timestamp} ${prefix} ${message}\n`;
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function addSource() {
+            const id = document.getElementById('source-id').value.trim();
+            const endpoint = document.getElementById('source-endpoint').value.trim();
+
+            if (!id || !endpoint) {
+                log('Please provide both source ID and endpoint', 'error');
+                return;
+            }
+
+            try {
+                router.add_source(id, endpoint);
+                log(`Added source: ${id} -> ${endpoint}`);
+                updateSourceList();
+                document.getElementById('source-id').value = '';
+                document.getElementById('source-endpoint').value = '';
+            } catch (e) {
+                log(`Error adding source: ${e}`, 'error');
+            }
+        }
+
+        function addDemoSources() {
+            const demoSources = [
+                { id: 'dbpedia', endpoint: 'https://dbpedia.org/sparql' },
+                { id: 'wikidata', endpoint: 'https://query.wikidata.org/sparql' },
+                { id: 'europeana', endpoint: 'https://sparql.europeana.eu/' },
+                { id: 'getty', endpoint: 'https://vocab.getty.edu/sparql' },
+                { id: 'linkedgeodata', endpoint: 'http://linkedgeodata.org/sparql' }
+            ];
+
+            for (const src of demoSources) {
+                try {
+                    router.add_source(src.id, src.endpoint);
+                    log(`Added demo source: ${src.id}`);
+                } catch (e) {
+                    log(`Source ${src.id} may already exist`, 'error');
+                }
+            }
+            updateSourceList();
+        }
+
+        function removeSource(id) {
+            try {
+                const removed = router.remove_source(id);
+                if (removed) {
+                    log(`Removed source: ${id}`);
+                } else {
+                    log(`Source not found: ${id}`, 'error');
+                }
+                updateSourceList();
+            } catch (e) {
+                log(`Error removing source: ${e}`, 'error');
+            }
+        }
+
+        function toggleAvailability(id, currentlyAvailable) {
+            try {
+                if (currentlyAvailable) {
+                    router.mark_unavailable(id);
+                    log(`Marked ${id} as unavailable`);
+                } else {
+                    router.mark_available(id);
+                    log(`Marked ${id} as available`);
+                }
+                updateSourceList();
+            } catch (e) {
+                log(`Error toggling availability: ${e}`, 'error');
+            }
+        }
+
+        function updateSourceList() {
+            const list = document.getElementById('source-list');
+            const sources = router.list_sources();
+
+            if (sources.length === 0) {
+                list.innerHTML = '<p style="color: #888;">No sources added yet</p>';
+                return;
+            }
+
+            let html = '';
+            for (const src of sources) {
+                const statusClass = src.available ? '' : 'unavailable';
+                html += `
+                    <div class="source-item">
+                        <div>
+                            <span class="name">${src.id}</span>
+                            <div class="endpoint">${src.endpoint}</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span class="status ${statusClass}" title="${src.available ? 'Available' : 'Unavailable'}"
+                                  onclick="toggleAvailability('${src.id}', ${src.available})" style="cursor:pointer;"></span>
+                            <button class="secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
+                                    onclick="removeSource('${src.id}')">X</button>
+                        </div>
+                    </div>
+                `;
+            }
+            list.innerHTML = html;
+        }
+
+        function updateConfig() {
+            const maxSources = parseInt(document.getElementById('max-sources').value);
+            const minConfidence = parseFloat(document.getElementById('min-confidence').value);
+            const useMl = document.getElementById('use-ml').checked;
+            const useContext = document.getElementById('use-context').checked;
+
+            router.set_max_sources(maxSources);
+            router.set_min_confidence(minConfidence);
+            router.set_use_ml(useMl);
+            router.set_use_context(useContext);
+
+            log(`Config updated: maxSources=${maxSources}, minConfidence=${minConfidence}, ml=${useMl}, context=${useContext}`);
+        }
+
+        function routeQuery() {
+            const query = document.getElementById('query-input').value;
+            const resultsDiv = document.getElementById('routing-results');
+
+            if (router.source_count() === 0) {
+                log('No sources available. Add some sources first!', 'error');
+                resultsDiv.innerHTML = '<p style="color: #e94560;">No sources available</p>';
+                return;
+            }
+
+            try {
+                const startTime = performance.now();
+                const result = router.route_query(query);
+                const elapsed = (performance.now() - startTime).toFixed(2);
+
+                log(`Query routed in ${elapsed}ms (internal: ${result.processingTimeUs}us)`);
+                log(`ML used: ${result.mlUsed}, Context used: ${result.contextUsed}`);
+
+                if (result.sources.length === 0) {
+                    resultsDiv.innerHTML = '<p style="color: #fbbf24;">No sources matched the query</p>';
+                    return;
+                }
+
+                let html = '';
+                result.sources.forEach((src, idx) => {
+                    const confidence = (src.confidence * 100).toFixed(1);
+                    html += `
+                        <div class="ranking-item">
+                            <span class="rank">#${idx + 1}</span>
+                            <span class="source-name">${src.sourceId}</span>
+                            <span class="confidence">${confidence}%</span>
+                            <div class="confidence-bar">
+                                <div class="fill" style="width: ${confidence}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += `<p style="margin-top: 1rem; color: #888; font-size: 0.8rem;">
+                    Processing: ${result.processingTimeUs}μs |
+                    ML: ${result.mlUsed ? 'Yes' : 'No'} |
+                    Context: ${result.contextUsed ? 'Yes' : 'No'}
+                </p>`;
+
+                resultsDiv.innerHTML = html;
+            } catch (e) {
+                log(`Routing error: ${e}`, 'error');
+                resultsDiv.innerHTML = `<p style="color: #e94560;">Error: ${e}</p>`;
+            }
+        }
+
+        function analyzeQuery() {
+            const query = document.getElementById('query-input').value;
+            const analysisDiv = document.getElementById('query-analysis');
+
+            try {
+                const analysis = router.analyze_query(query);
+                log(`Query analyzed: type=${analysis.queryType}, complexity=${analysis.complexity}`);
+
+                let html = `
+                    <div class="analysis-grid">
+                        <div class="analysis-item">
+                            <strong>Type</strong><br>${analysis.queryType}
+                        </div>
+                        <div class="analysis-item">
+                            <strong>Complexity</strong><br>${analysis.complexity.toFixed(2)}
+                        </div>
+                        <div class="analysis-item">
+                            <strong>Triples</strong><br>${analysis.triplePatternCount}
+                        </div>
+                        <div class="analysis-item">
+                            <strong>Predicates</strong><br>${analysis.predicateCount}
+                        </div>
+                        <div class="analysis-item ${analysis.hasOptional}">
+                            OPTIONAL
+                        </div>
+                        <div class="analysis-item ${analysis.hasUnion}">
+                            UNION
+                        </div>
+                        <div class="analysis-item ${analysis.hasFilter}">
+                            FILTER
+                        </div>
+                        <div class="analysis-item ${analysis.hasAggregation}">
+                            AGGREGATION
+                        </div>
+                        <div class="analysis-item ${analysis.requiresSparql11}">
+                            SPARQL 1.1
+                        </div>
+                    </div>
+                `;
+
+                if (analysis.predicates && analysis.predicates.length > 0) {
+                    html += `<p style="margin-top: 1rem;"><strong>Predicates:</strong></p>
+                        <div class="results" style="max-height: 100px;">
+                            ${analysis.predicates.join('\n')}
+                        </div>`;
+                }
+
+                if (analysis.types && analysis.types.length > 0) {
+                    html += `<p style="margin-top: 0.5rem;"><strong>Types:</strong></p>
+                        <div class="results" style="max-height: 100px;">
+                            ${analysis.types.join('\n')}
+                        </div>`;
+                }
+
+                analysisDiv.innerHTML = html;
+            } catch (e) {
+                log(`Analysis error: ${e}`, 'error');
+                analysisDiv.innerHTML = `<p style="color: #e94560;">Error: ${e}</p>`;
+            }
+        }
+
+        // Initialize
+        main();
+    </script>
+</body>
+</html>
