@@ -123,3 +123,5 @@ engine/oxirs-samm/vehicle*.dot
 
 # Test-generated files
 engine/oxirs-vec/metadata.json
+
+target
