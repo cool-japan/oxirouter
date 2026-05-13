@@ -287,7 +287,6 @@ mod property_path_parser_props {
 /// is available in std environments; `alloc` is also always enabled in std).
 #[cfg(feature = "std")]
 mod router_state_wire_props {
-    use super::*;
     use oxirouter::{DataSource, Router};
     #[cfg(not(feature = "sparql"))]
     use proptest::prelude::*;
