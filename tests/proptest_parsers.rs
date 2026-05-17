@@ -288,7 +288,6 @@ mod property_path_parser_props {
 #[cfg(feature = "std")]
 mod router_state_wire_props {
     use oxirouter::{DataSource, Router};
-    #[cfg(not(feature = "sparql"))]
     use proptest::prelude::*;
 
     proptest! {
