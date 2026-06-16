@@ -17,7 +17,7 @@ for SPARQL federated queries with context-awareness.
 | Status | Alpha — feature-complete for 0.1.x, API may evolve |
 | Tests | 501 unit/integration + 6 doc tests (all passing) |
 | Lines of code | 23,361 Rust (96 files) |
-| Edition / MSRV | 2024 / 1.85 |
+| Edition / MSRV | 2024 / 1.89 |
 | License | Apache-2.0 |
 | CLI | `oxirouter-cli` — `route`, `explain`, `void-import`, `state save/load` |
 
