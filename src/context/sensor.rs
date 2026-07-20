@@ -22,7 +22,7 @@ use super::LegalContext;
 
 /// Provides geographic context from a hardware or data source.
 ///
-/// Implementations bridge real geospatial backends (e.g., `oxigdal_core`)
+/// Implementations bridge real geospatial backends (e.g., `oxigeo_core`)
 /// into the routing system. The `sense()` method should be cheap to call;
 /// heavy I/O should be cached by the sensor itself.
 #[cfg(feature = "geo")]

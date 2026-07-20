@@ -168,12 +168,12 @@ pub enum DataResidencyTier {
     Unknown,
 }
 
-/// Integration with oxigdal-core types
+/// Integration with oxigeo-core types
 #[cfg(feature = "geo")]
 impl GeoContext {
     /// Create from oxigdal BoundingBox
     #[must_use]
-    pub fn from_oxigdal_bbox(bbox: &oxigdal_core::BoundingBox) -> Self {
+    pub fn from_oxigdal_bbox(bbox: &oxigeo_core::BoundingBox) -> Self {
         Self {
             position: Some((
                 f64::midpoint(bbox.min_x, bbox.max_x),
@@ -192,9 +192,9 @@ impl GeoContext {
 
     /// Convert to oxigdal BoundingBox
     #[must_use]
-    pub fn to_oxigdal_bbox(&self) -> Option<oxigdal_core::BoundingBox> {
+    pub fn to_oxigdal_bbox(&self) -> Option<oxigeo_core::BoundingBox> {
         if let Some([min_x, min_y, max_x, max_y]) = self.bbox {
-            oxigdal_core::BoundingBox::new(min_x, min_y, max_x, max_y).ok()
+            oxigeo_core::BoundingBox::new(min_x, min_y, max_x, max_y).ok()
         } else {
             None
         }

@@ -4,8 +4,8 @@
 mod geo_sensor_tests {
     use oxirouter::{DynamicOxigdalGeoSensor, StaticOxigdalGeoSensor, context::sensor::GeoSensor};
 
-    fn bbox(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> oxigdal_core::BoundingBox {
-        oxigdal_core::BoundingBox::new(min_x, min_y, max_x, max_y)
+    fn bbox(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> oxigeo_core::BoundingBox {
+        oxigeo_core::BoundingBox::new(min_x, min_y, max_x, max_y)
             .expect("valid bounding box coordinates")
     }
 
@@ -78,7 +78,7 @@ mod geo_sensor_tests {
     #[test]
     fn dynamic_sensor_round_trips_bbox() {
         let sensor = DynamicOxigdalGeoSensor::new(|| {
-            oxigdal_core::BoundingBox::new(139.0, 35.0, 140.0, 36.0).ok()
+            oxigeo_core::BoundingBox::new(139.0, 35.0, 140.0, 36.0).ok()
         })
         .with_country_code("JP".to_string());
 
@@ -95,7 +95,7 @@ mod geo_sensor_tests {
     #[test]
     fn dynamic_sensor_without_country_code() {
         let sensor = DynamicOxigdalGeoSensor::new(|| {
-            oxigdal_core::BoundingBox::new(-74.0, 40.0, -73.0, 41.0).ok()
+            oxigeo_core::BoundingBox::new(-74.0, 40.0, -73.0, 41.0).ok()
         });
 
         let ctx = sensor.sense().expect("dynamic sensor must return Some");

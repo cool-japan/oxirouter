@@ -7,14 +7,14 @@
 #[cfg(feature = "geo")]
 use super::{GeoContext, sensor::GeoSensor};
 
-/// A static geographic sensor backed by a pre-built `oxigdal_core::BoundingBox`.
+/// A static geographic sensor backed by a pre-built `oxigeo_core::BoundingBox`.
 ///
 /// Suitable for deployment-time configuration where the region of interest
 /// is known at startup (data-center regional routing, fixed sensor nodes).
 #[cfg(feature = "geo")]
 pub struct StaticOxigdalGeoSensor {
     /// The bounding box representing the region of interest.
-    pub bbox: oxigdal_core::BoundingBox,
+    pub bbox: oxigeo_core::BoundingBox,
     /// Optional ISO 3166-1 alpha-2 country code (e.g., `"DE"`, `"JP"`).
     pub country_code: Option<String>,
 }
@@ -45,14 +45,14 @@ impl GeoSensor for StaticOxigdalGeoSensor {
 ///
 /// let sensor = DynamicOxigdalGeoSensor::new(|| {
 ///     // Replace with real GPS call
-///     oxigdal_core::BoundingBox::new(13.0, 52.0, 14.0, 53.0).ok()
+///     oxigeo_core::BoundingBox::new(13.0, 52.0, 14.0, 53.0).ok()
 /// }).with_country_code("DE".to_string());
 /// # }
 /// ```
 #[cfg(feature = "geo")]
 pub struct DynamicOxigdalGeoSensor<F>
 where
-    F: Fn() -> Option<oxigdal_core::BoundingBox> + Send + Sync,
+    F: Fn() -> Option<oxigeo_core::BoundingBox> + Send + Sync,
 {
     /// Closure that yields the current bounding box, or `None` if unavailable.
     bbox_fn: F,
@@ -63,7 +63,7 @@ where
 #[cfg(feature = "geo")]
 impl<F> DynamicOxigdalGeoSensor<F>
 where
-    F: Fn() -> Option<oxigdal_core::BoundingBox> + Send + Sync,
+    F: Fn() -> Option<oxigeo_core::BoundingBox> + Send + Sync,
 {
     /// Create a new dynamic sensor with the given closure.
     #[must_use]
@@ -85,7 +85,7 @@ where
 #[cfg(feature = "geo")]
 impl<F> GeoSensor for DynamicOxigdalGeoSensor<F>
 where
-    F: Fn() -> Option<oxigdal_core::BoundingBox> + Send + Sync,
+    F: Fn() -> Option<oxigeo_core::BoundingBox> + Send + Sync,
 {
     fn sense(&self) -> Option<GeoContext> {
         let bbox = (self.bbox_fn)()?;
