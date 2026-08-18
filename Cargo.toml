@@ -90,8 +90,8 @@ tracing = { version = "0.1", default-features = false, features = ["attributes",
 metrics = { version = "0.24", optional = true }
 
 # Ecosystem integrations (from crates.io)
-oxigeo-core = { version = "0.2.3", optional = true }
-oxigeo-proj = { version = "0.2.3", optional = true }
+oxigeo-core = { version = "0.2.4", optional = true }
+oxigeo-proj = { version = "0.2.4", optional = true }
 legalis-core = { version = "0.1.6", optional = true }
 celers-core = { version = "0.3.0", optional = true }
 mielin-hal = { version = "0.1.0-rc.1", optional = true }
